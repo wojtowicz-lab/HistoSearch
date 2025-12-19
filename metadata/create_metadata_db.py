@@ -4,7 +4,7 @@ import pandas as pd
 
 if __name__ == "__main__":
     # Load patch and patient metadata
-    patch_metadata_file = "metadata/raw_data/uni2h_patch_metadata.parquet"
+    patch_metadata_file = "metadata/raw_data/uni2h_augmented_IndexIVFPQ_patch_metadata.parquet"
     patient_metadata_file = "metadata/raw_data/liu.csv"
 
     # Read the dataframes
@@ -21,13 +21,13 @@ if __name__ == "__main__":
 
     # Create patch metadata DataFrame
     metadata_df = patch_metadata_df.copy()
-    metadata_df.columns = ["faiss_index", "MSI_status", "slide_id", "embedding"]
+    metadata_df.columns = ["faiss_index", "slide_id", "embedding", "rotation"]
     metadata_df[['patch_coord_x','patch_coord_y']] = metadata_df['embedding'].str.extract(r'\((\d+),(\d+)\)').astype(int)
     metadata_df["slide"] = metadata_df['embedding'].str.extract(r'(.+)_')
     metadata_df["patch_filename"] = metadata_df["embedding"] + ".jpg"
     metadata_df.drop(columns="embedding", inplace=True)
     metadata_df["patient_id"] = metadata_df["slide"].str[:12]
-    metadata_df.drop(columns="MSI_status", inplace=True)
+    # metadata_df.drop(columns="MSI_status", inplace=True)
 
     metadata_df.to_parquet("metadata/patch_metadata.parquet")
 

@@ -136,8 +136,15 @@ def get_most_similar_patches(
     # Join with metadata
     results = results.merge(patch_metadata, left_on="id", right_on="faiss_index", how="left")
     results = results.loc[results["id"] != -1]  # Drop unfound indecies
+
+    # Choose top n patients
     top_n_patients = results.sort_values("score", ascending=False).patient_id.drop_duplicates().iloc[:n_patients]  # Find top n patients by IP
     results = results.loc[results["patient_id"].isin(top_n_patients)]  # Drop worst patients
+
+    # Select only best of the augmented patch versions
+    results = results.sort_values("score", ascending=False).drop_duplicates("patch_filename")
+
+    # Merge with patient metadata
     results = results.merge(patient_metadata, left_on="patient_id", right_on="TCGA Participant Barcode", how="left")
 
     return results

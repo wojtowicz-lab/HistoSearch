@@ -10,3 +10,4 @@ __pycache__
 .env
 .gradio
 *.hdf5
+faiss_search/test_indices
