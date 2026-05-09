@@ -31,47 +31,6 @@ def search_faiss(  # NOTE WORKS FOR BOTH IVFPQ AND FLAT INDICES
     return indices, distances
 
 
-# def search_faiss_bruteforce(
-#         query_vector: np.array,
-#         index: faiss.IndexFlat,
-#         k: int = 5,
-#         subset: None | list[int] = None,
-# ):
-#     """
-#     Brute-force FAISS search with optional subset filtering.
-    
-#     Args:
-#         query_vector: np.array (D,) or (1, D)
-#         index: faiss.IndexFlatL2 or faiss.IndexFlatIP
-#         embeddings: np.array (N, D)  # same data used to build index
-#         k: number of neighbors to return
-#         subset: optional list of row indices to restrict search
-#     """
-
-#     # Ensure query is 2D: (1, D)
-#     query = query_vector.astype("float32")
-#     if query.ndim == 1:
-#         query = query.reshape(1, -1)
-#     elif query.shape[0] != 1:
-#         query = query.reshape(1, -1)
-
-#     # Normalize if using cosine / inner product search
-#     if isinstance(index, faiss.IndexFlatIP):
-#         faiss.normalize_L2(query)
-
-#     # Select filtered indices
-#     id_selector = faiss.IDSelectorArray(subset)
-#     search_parameters = faiss.IVFPQSearchParameters(sel=id_selector)  # TODO FIX
-
-#     # Full brute-force search
-#     distances, indices = index.search(query, k, params=search_parameters)
-
-#     indices = indices[0]
-#     distances = distances[0]
-
-#     return indices, distances
-
-
 def get_most_similar_patches(
         query_vec: np.ndarray,
         patient_metadata: pd.DataFrame,
