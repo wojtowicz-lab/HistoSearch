@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 
 from retrieval.fetch import download_patches, load_patches_to_RAM, load_patch_to_RAM
-from retrieval.utils import get_patch_urls
+from retrieval.utils import get_patch_urls, determine_tile_size
 from PIL import Image
 
 
@@ -12,10 +12,13 @@ def get_patch_context(
         patch_filename: str,
         patch_metadata: pd.DataFrame,
         context_size: int = 1,
-        tile_size: int = 1014,
+        tile_size: int | str = 1014,
+        verbose: bool = True,
+        return_tile_size: bool = False,
 ) -> list[str]:
     """Get nearest context images metadata of a given patch."""
-    print(f"Getting context of {patch_filename}...")
+    if verbose:
+        print(f"Getting context of {patch_filename}...")
     x, y = re.search(r'\((\d+),(\d+)\)', patch_filename).groups()
     x, y = int(x), int(y)
 
@@ -32,6 +35,9 @@ def get_patch_context(
     k = (2*context_size + 1) ** 2 
     top_k_nearest = context_df.copy().iloc[:k]
 
+    if tile_size == "auto":
+        tile_size = determine_tile_size(top_k_nearest, verbose=verbose)
+
     # Define positions relative to the center (given patch)
     top_k_nearest["x_pos"] = ((top_k_nearest["patch_coord_x"] - x) / tile_size).apply(np.round)
     top_k_nearest["y_pos"] = ((top_k_nearest["patch_coord_y"] - y) / tile_size).apply(np.round)
@@ -42,6 +48,8 @@ def get_patch_context(
     patch_urls = get_patch_urls(top_k_nearest.patch_filename)
     top_k_nearest["patch_url"] = top_k_nearest.patch_filename.map(patch_urls)
 
+    if return_tile_size:
+        return top_k_nearest, tile_size
     return top_k_nearest
 
 

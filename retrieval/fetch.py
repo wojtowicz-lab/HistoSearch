@@ -58,6 +58,7 @@ def load_patch_to_RAM(
         patch_url: str,
         patch_filename: str,
         max_retries: int = 3,
+        verbose: bool = True,
 ) -> tuple[str, Patch]:
     """Load a patch form google drive to RAM."""
     for i in range(max_retries):
@@ -65,12 +66,13 @@ def load_patch_to_RAM(
             response = requests.get(patch_url, timeout=10)
             response.raise_for_status()
             img = Image.open(BytesIO(response.content))
-            print(f"✅ Loaded {patch_filename} ({img.format}, {img.size})")
+            if verbose:
+                print(f"✅ Loaded {patch_filename} ({img.format}, {img.size})")
             return (patch_filename, img)
         except Exception as e:
-            print(f"❌ Failed to load {patch_filename}: {e}")
-            # return (patch_filename, None)
-            print(f"Retry loading {patch_filename}: attempt {i+1}...")
+            if verbose: 
+                print(f"❌ Failed to load {patch_filename}: {e}")
+                print(f"Retry loading {patch_filename}: attempt {i+1}...")
         
     raise Exception(f"Max number of retries ({max_retries}) reached for loading {patch_filename}! Check your internet connection or try in a few minutes.")
 
@@ -80,6 +82,7 @@ def load_patches_to_RAM(
         patch_filenames: list[str],
         mapping_filename: list[str] = "retrieval/data/patch_name_to_drive_id_mapping.parquet",
         num_workers: int = os.cpu_count() * 5,
+        verbose: bool = True,
 ) -> dict[str: Patch]:
     """Load a list of patches from Google Drive to RAM."""
     # Get patch urls
@@ -87,15 +90,17 @@ def load_patches_to_RAM(
 
     patches = {}
 
-    print("Loading patches form Drive...")
+    if verbose:
+        print("Loading patches form Drive...")
     with ThreadPoolExecutor(max_workers=num_workers) as executor:
-        futures = [executor.submit(load_patch_to_RAM, url, filename) for url, filename in patch_urls.items()]
+        futures = [executor.submit(load_patch_to_RAM, url, filename, 3, verbose) for url, filename in patch_urls.items()]
 
         for future in as_completed(futures):
             filename, img = future.result()
             if img:
                 patches[filename] = img
-                print(f"✅ Loaded {filename} ({img.format}, {img.size})")
+                if verbose:
+                    print(f"✅ Loaded {filename} ({img.format}, {img.size})")
 
     return patches
 
