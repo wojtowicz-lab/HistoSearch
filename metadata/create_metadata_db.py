@@ -1,10 +1,10 @@
-import sqlite3
+# import sqlite3
 import pandas as pd
 
 
 if __name__ == "__main__":
     # Load patch and patient metadata
-    patch_metadata_file = "metadata/raw_data/uni2h_augmented_IndexIVFPQ_patch_metadata.parquet"
+    patch_metadata_file = "metadata/raw_data/uni2h_IndexIVFPQ_augmented_patch_metadata.parquet"
     patient_metadata_file = "metadata/raw_data/liu.csv"
 
     # Read the dataframes
@@ -36,4 +36,7 @@ if __name__ == "__main__":
     signature_bool_df = ((signature_df > 0) * 1)
 
     merged_patient_metadata_df = pd.merge(patient_metadata_df, signature_bool_df, left_on="TCGA Participant Barcode", right_index=True)
+
+    # Filter out patients not present in the patch dataset
+    merged_patient_metadata_df = merged_patient_metadata_df.loc[merged_patient_metadata_df["TCGA Participant Barcode"].isin(metadata_df.patient_id.unique())]
     merged_patient_metadata_df.to_parquet("metadata/patient_metadata.parquet")
