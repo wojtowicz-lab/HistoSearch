@@ -11,3 +11,4 @@ __pycache__
 .gradio
 *.hdf5
 faiss_search/test_indices
+evaluation/results
