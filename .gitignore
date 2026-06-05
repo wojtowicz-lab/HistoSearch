@@ -1,7 +1,6 @@
 raw_embeddings
 .venv
 output
-*.jpg
 models/UNI2-h
 __pycache__
 *.bin

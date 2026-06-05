@@ -18,13 +18,20 @@ hf auth login
 mkdir -p retrieval/output
 ```
 
-# Test execution
+# Run the app
 
-1. Set up the environment with `requirements.txt`.
-2. Run `query.py`:
+1. Create a virtual environment and install dependencies:
 
 ```bash
-python3 query.py
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Other features to be added...
+2. Launch the Gradio app:
+
+```bash
+python3 app.py
+```
+
+Open http://localhost:7860 in your browser to access the interface.

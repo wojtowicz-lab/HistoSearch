@@ -14,10 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 # Global variables
-# INDEX_FILEPATH = "faiss_search/faiss_indecies/uni2h_IndexIVFPQ.faiss"
-# INDEX_FILEPATH = "faiss_search/faiss_indecies/uni2h_bruteforce_index_10_patients.faiss"
-# INDEX_FILEPATH = "faiss_search/faiss_indecies/uni2h_IndexFlatIP_10_patients.faiss"
-INDEX_FILEPATH = "faiss_search/faiss_indices/uni2h_augmented_IndexIVFPQ.faiss"
+INDEX_FILEPATH = "faiss_search/faiss_indices/uni2h_IndexIVFPQ_augmented.faiss"
 OUTPUT_DIR = "retrieval/output"
 
 # Load model once at startup
@@ -38,6 +35,8 @@ def process_image_query(
     anatomic_region_filter: list[str],
     msi_status_filter: list[str],
     mutational_signature_filter: list[str],
+    selected_display_columns: list[str],
+    selected_signature_columns: list[str],
     context_size: int = 1,
     max_workers: int = 8,
 ):
@@ -123,7 +122,19 @@ def process_image_query(
                 gallery_images.append(img_path)
         
         # Prepare results dataframe for display
-        display_columns = ['patch_filename', 'score', 'patient_id'] + list(filters.keys())
+        display_columns = ['patch_filename', 'score', 'patient_id']
+
+        # Append user-selected metadata columns
+        if selected_display_columns:
+            for col in selected_display_columns:
+                if col not in display_columns:
+                    display_columns.append(col)
+
+        # Append user-selected mutational signatures to display
+        if selected_signature_columns:
+            for sig in selected_signature_columns:
+                if sig not in display_columns:
+                    display_columns.append(sig)
         available_columns = [col for col in display_columns if col in search_results.columns]
         results_display = search_results[available_columns].copy()
         results_display['score'] = results_display['score'].round(4)
@@ -152,6 +163,17 @@ ANATOMIC_REGION_OPTIONS = ['Esophagus', 'Ascending_Colon', 'Gastric_Fundus_and_B
 MSI_STATUS_OPTIONS = ['MSI-L', 'MSS', 'MSI-H']
 MUTATIONAL_SIGNATURE_OPTIONS = ["SBS1","SBS2","SBS3","SBS5","SBS6","SBS10a","SBS10b","SBS13","SBS15",
                                 "SBS17a","SBS17b","SBS18","SBS20","SBS21","SBS28","SBS29","SBS40a"]
+
+# Columns available for display (keys from create_metadata_filter)
+META_DISPLAY_OPTIONS = [
+    "TCGA Project Code",
+    "Organ",
+    "Stage",
+    "Gender",
+    "Vital status",
+    "Anatomic Region",
+    "MSI Status",
+]
 
 
 # Create Gradio interface
@@ -262,6 +284,18 @@ with gr.Blocks(title="Histopathology Image Retrieval", theme=gr.themes.Soft()) a
                 info="Filter by Mutational Signature Activity (etiology)"
             )
             
+            display_columns_checkbox = gr.CheckboxGroup(
+                choices=META_DISPLAY_OPTIONS,
+                label="Columns to include in results",
+                info="Select which metadata columns to show in the results table"
+            )
+
+            signatures_display_checkbox = gr.CheckboxGroup(
+                choices=MUTATIONAL_SIGNATURE_OPTIONS,
+                label="Mutational Signatures to include in results",
+                info="Select which mutational signature columns to show in the results table"
+            )
+            
             # Search button
             search_btn = gr.Button("🔍 Search Similar Patches", variant="primary", size="lg")
             
@@ -295,7 +329,7 @@ with gr.Blocks(title="Histopathology Image Retrieval", theme=gr.themes.Soft()) a
     gr.Examples(
         examples=[
             [
-                "embeddings/TCGA-D5-6927-01Z-00-DX1_(1015,11174).jpg",
+                "embeddings/TCGA-2H-A9GK-01Z-00-DX1_(5069,60831).jpg",
                 5,
                 5,
                 [],
@@ -306,6 +340,10 @@ with gr.Blocks(title="Histopathology Image Retrieval", theme=gr.themes.Soft()) a
                 [],
                 [],
                 [],
+                [],
+                [],
+                1,
+                8,
             ]
         ],
         inputs=[
@@ -318,6 +356,8 @@ with gr.Blocks(title="Histopathology Image Retrieval", theme=gr.themes.Soft()) a
             anatomic_region_filter,
             msi_status_filter,
             mutational_signature_filter,
+            display_columns_checkbox,
+            signatures_display_checkbox,
             context_size,
             max_workers,
         ],
@@ -337,6 +377,8 @@ with gr.Blocks(title="Histopathology Image Retrieval", theme=gr.themes.Soft()) a
             anatomic_region_filter,
             msi_status_filter,
             mutational_signature_filter,
+            display_columns_checkbox,
+            signatures_display_checkbox,
             context_size,
             max_workers,
         ],
